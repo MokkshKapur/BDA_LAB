@@ -1,0 +1,52 @@
+from pyspark import SparkContext
+
+def get_matrix_input(name):
+    rows = int(input(f"Enter the number of rows for matrix {name}: "))
+    cols = int(input(f"Enter the number of columns for matrix {name}: "))
+    print(f"Enter the elements of matrix {name} row by row:")
+    matrix = []
+    for i in range(rows):
+        row = list(map(int, input().split()))
+        if len(row) != cols:
+            raise ValueError(f"Each row must have exactly {cols} elements.")
+        matrix.append((i, row))
+    return matrix, rows, cols
+
+def mapper(matrix_a, matrix_b):
+    mapped = []
+    for i, row in matrix_a:
+        for j in range(len(matrix_b[0][1])):
+            for k in range(len(row)):
+                mapped.append(((i, j), row[k] * matrix_b[k][1][j]))
+    return mapped
+
+def matrix_multiplication(sc, matrix_a, matrix_b):
+    rdd_a = sc.parallelize(matrix_a)
+    rdd_b = sc.parallelize(matrix_b)
+    mapped_values = mapper(matrix_a, matrix_b)
+    result_rdd = sc.parallelize(mapped_values)
+    result = result_rdd.reduceByKey(lambda x, y: x + y).collect()
+    return result
+
+def print_matrix(result, rows, cols):
+    matrix = [[0] * cols for _ in range(rows)]
+    for (i, j), val in result:
+        matrix[i][j] = val
+    print("Resultant Matrix:")
+    for row in matrix:
+        print(" ".join(map(str, row)))
+
+if __name__ == "__main__":
+    try:
+        sc = SparkContext(appName="MatrixMultiplication")
+        matrix_a, rows_a, cols_a = get_matrix_input('A')
+        matrix_b, rows_b, cols_b = get_matrix_input('B')
+
+        if cols_a != rows_b:
+            raise ValueError("Number of columns in Matrix A must be equal to the number of rows in Matrix B for multiplication.")
+
+        result = matrix_multiplication(sc, matrix_a, matrix_b)
+        print_matrix(result, rows_a, cols_b)
+        sc.stop()
+    except Exception as e:
+        print(f"Error: {e}")
