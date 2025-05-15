@@ -1,0 +1,39 @@
+from multiprocessing import Pool
+
+def matrix_multiply_worker(args):
+    """Computes the dot product of a row and column pair."""
+    row, col = args
+    return sum(x * y for x, y in zip(row, col))
+
+def transpose(matrix):
+    """Returns the transpose of a matrix."""
+    return list(map(list, zip(*matrix)))
+
+def matrix_multiply(A, B):
+    """Performs matrix multiplication using MapReduce."""
+    B_T = transpose(B)  # Transpose matrix B to ease column access
+    with Pool() as pool:
+        result = pool.map(matrix_multiply_worker, [(row, col) for row in A for col in B_T])
+    
+    # Reshape the result into a matrix
+    rows, cols = len(A), len(B[0])
+    return [result[i * cols:(i + 1) * cols] for i in range(rows)]
+
+def get_matrix_input(name):
+    """Takes matrix input from the user."""
+    rows = int(input(f"Enter the number of rows for {name}: "))
+    cols = int(input(f"Enter the number of columns for {name}: "))
+    print(f"Enter the elements of {name} row-wise:")
+    return [[int(x) for x in input().split()] for _ in range(rows)]
+
+if __name__ == "__main__":
+    A = get_matrix_input("Matrix A")
+    B = get_matrix_input("Matrix B")
+
+    if len(A[0]) != len(B):
+        print("Matrix multiplication is not possible: Number of columns in A must equal number of rows in B.")
+    else:
+        result = matrix_multiply(A, B)
+        print("Resultant Matrix:")
+        for row in result:
+            print(" ".join(map(str, row)))
