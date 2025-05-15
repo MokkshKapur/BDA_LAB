@@ -1,0 +1,24 @@
+from bs4 import BeautifulSoup
+import requests
+
+# URL of the website to scrape
+url = "https://www.brainyquote.com/"
+
+# Send a GET request to the website
+response = requests.get(url)
+
+# Check if the request was successful
+if response.status_code == 200:
+    # Parse the HTML content of the page
+    soup = BeautifulSoup(response.text, 'html.parser')
+    
+    # Find all <a> tags (hyperlinks) on the page
+    links = soup.find_all('a')
+    
+    # Print the text and href attribute of each link
+    for link in links:
+        text = link.text.strip()  # Get the link text
+        href = link.get('href')  # Get the link URL
+        print(f"Text: {text}, URL: {href}")
+else:
+    print(f"Failed to fetch the URL. Status code: {response.status_code}")
